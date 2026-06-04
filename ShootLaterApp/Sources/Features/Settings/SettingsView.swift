@@ -9,32 +9,71 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section("Permissions") {
-                    HStack {
-                        Label("Location", systemImage: "location.fill")
-                        Spacer()
-                        Text(locationLabel)
-                            .foregroundStyle(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    GlassPanel {
+                        VStack(alignment: .leading, spacing: 12) {
+                            AppMark(size: 70)
+                            SectionHeading(
+                                title: "Private by default",
+                                subtitle: "ShootLater stores scouting photos, notes, and exact coordinates locally on this device."
+                            )
+                        }
                     }
-                    Button("Request Location Access") {
-                        locationService.requestAuthorization()
-                    }
-                }
 
-                Section("Privacy") {
-                    Text("ShootLater stores exact coordinates and photos locally on this device. Share cards show a general location while Apple Maps links use coordinates only when you choose to share.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeading(title: "Permissions", subtitle: "Location helps each spot remember where it was captured.")
+                        GlassPanel {
+                            VStack(alignment: .leading, spacing: 14) {
+                                HStack(alignment: .top, spacing: 12) {
+                                    Image(systemName: locationService.authorizationState == .denied ? "location.slash" : "location.fill")
+                                        .font(.headline)
+                                        .foregroundStyle(ShootLaterTheme.teal)
+                                        .frame(width: 34, height: 34)
+                                        .background(ShootLaterTheme.mist, in: Circle())
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Location")
+                                            .font(.headline)
+                                        Text(locationLabel)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    Spacer(minLength: 0)
+                                }
 
-                Section {
-                    Button(role: .destructive) {
-                        confirmDelete = true
-                    } label: {
-                        Label("Delete All Spots", systemImage: "trash")
+                                Button("Request Location Access") {
+                                    locationService.requestAuthorization()
+                                }
+                                .buttonStyle(.glass)
+                            }
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeading(title: "Sharing", subtitle: "Share cards show the general place name. Apple Maps links include exact coordinates only when you share a located spot.")
+                        InfoTile(title: "Saved spots", value: "\(spots.count)", systemImage: "rectangle.stack")
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeading(title: "Destructive actions")
+                        Button(role: .destructive) {
+                            confirmDelete = true
+                        } label: {
+                            Label("Delete All Spots", systemImage: "trash")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("deleteAllSpotsButton")
                     }
                 }
+                .padding()
+                .frame(maxWidth: ShootLaterTheme.maxContentWidth)
+                .frame(maxWidth: .infinity)
+            }
+            .background {
+                ScoutingBackdrop()
+                    .ignoresSafeArea()
             }
             .navigationTitle("Settings")
             .alert("Delete all spots?", isPresented: $confirmDelete) {

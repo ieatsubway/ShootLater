@@ -114,17 +114,22 @@ final class CameraCaptureViewController: UIViewController, @preconcurrency AVCap
         shutter.isEnabled = false
         shutter.setPreferredSymbolConfiguration(.init(pointSize: 72, weight: .regular), forImageIn: .normal)
         shutter.addTarget(self, action: #selector(capture), for: .touchUpInside)
+        shutter.accessibilityLabel = "Capture scouting photo"
+        shutter.accessibilityIdentifier = "cameraShutterButton"
 
         let cancel = UIButton(type: .system)
         cancel.setTitle("Cancel", for: .normal)
         cancel.tintColor = .white
         cancel.addTarget(self, action: #selector(cancelCapture), for: .touchUpInside)
+        cancel.accessibilityLabel = "Cancel camera capture"
+        cancel.accessibilityIdentifier = "cameraCancelButton"
 
         statusLabel.textColor = .white
         statusLabel.font = .preferredFont(forTextStyle: .body)
         statusLabel.textAlignment = .center
         statusLabel.numberOfLines = 0
         statusLabel.isHidden = true
+        statusLabel.accessibilityIdentifier = "cameraStatusLabel"
 
         [shutter, cancel, statusLabel].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false

@@ -8,7 +8,10 @@ struct RootView: View {
     var body: some View {
         @Bindable var router = router
 
-        Group {
+        ZStack {
+            ScoutingBackdrop()
+                .ignoresSafeArea()
+
             if hasSeenOnboarding {
                 MainTabView(selectedTab: $router.selectedTab)
             } else {
@@ -18,6 +21,7 @@ struct RootView: View {
                 }
             }
         }
+        .background(ShootLaterTheme.backdropBase.ignoresSafeArea())
     }
 }
 
@@ -42,6 +46,9 @@ struct MainTabView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
                 .tag(AppTab.settings)
         }
+        .tint(ShootLaterTheme.actionAmber)
+        .toolbarBackground(.hidden, for: .tabBar)
+        .background(.clear)
     }
 }
 
@@ -49,35 +56,66 @@ struct OnboardingView: View {
     let onContinue: () -> Void
 
     var body: some View {
-        VStack(spacing: 28) {
-            Spacer()
+        GeometryReader { proxy in
+            let compactOnboarding = proxy.size.height < 900
+            ZStack {
+                ScoutingBackdrop()
+                    .ignoresSafeArea()
 
-            Image(systemName: "camera.metering.center.weighted")
-                .font(.system(size: 64, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 118, height: 118)
-                .background(.teal.gradient, in: Circle())
+                ScrollView {
+                    VStack(spacing: compactOnboarding ? 10 : 22) {
+                        AppMark(size: compactOnboarding ? 54 : 96)
+                            .padding(.top, compactOnboarding ? 10 : 28)
 
-            VStack(spacing: 12) {
-                Text("ShootLater")
-                    .font(.largeTitle.bold())
-                Text("Save places you may want to photograph later. Location stays private on this device and helps you rediscover the spot when you need it.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-            }
+                        RoundedRectangle(cornerRadius: 34, style: .continuous)
+                            .fill(ShootLaterTheme.scoutingGradient)
+                            .frame(maxWidth: 460)
+                            .frame(height: compactOnboarding ? 146 : 238)
+                            .overlay(alignment: .bottomLeading) {
+                                VStack(alignment: .leading, spacing: compactOnboarding ? 8 : 10) {
+                                    Label("Private scouting", systemImage: "location.viewfinder")
+                                        .font(.caption.weight(.semibold))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, compactOnboarding ? 6 : 8)
+                                        .glassEffect(.regular, in: Capsule())
 
-            Button(action: onContinue) {
-                Label("Set Up Location", systemImage: "location.fill")
+                                    Text("Save the place now. Shape the shoot later.")
+                                        .font((compactOnboarding ? Font.headline : .title2).weight(.bold))
+                                        .foregroundStyle(.white)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                .padding(compactOnboarding ? 18 : 22)
+                            }
+
+                        VStack(spacing: compactOnboarding ? 8 : 12) {
+                            Text("ShootLater")
+                                .font((compactOnboarding ? Font.title2 : .largeTitle).weight(.bold))
+
+                            Button(action: onContinue) {
+                                Label("Set Up Location", systemImage: "location.fill")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(minHeight: compactOnboarding ? 46 : 50)
+                            }
+                            .buttonStyle(.glassProminent)
+                            .tint(ShootLaterTheme.actionAmber)
+                            .frame(maxWidth: 420)
+                            .padding(.top, 4)
+
+                            Text("Private local scouting. Exact coordinates stay on this device.")
+                                .font(compactOnboarding ? .footnote : .body)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: 520)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 28)
                     .frame(maxWidth: .infinity)
+                    .frame(minHeight: proxy.size.height, alignment: .top)
+                }
             }
-            .buttonStyle(.glass)
-            .padding(.horizontal, 28)
-
-            Spacer()
         }
-        .padding()
-        .background(.background)
     }
 }

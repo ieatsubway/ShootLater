@@ -60,28 +60,12 @@ struct ShareCardRenderer {
 
             if let photo {
                 drawImage(photo, in: rect)
-                UIColor.black.withAlphaComponent(0.36).setFill()
-                cgContext.fill(rect)
+                drawBottomScrim(in: rect, context: cgContext)
             } else {
-                let colors = [UIColor.systemTeal.cgColor, UIColor.systemIndigo.cgColor]
-                let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1])!
-                cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
-                UIColor.white.withAlphaComponent(0.18).setStroke()
-                cgContext.setLineWidth(6)
-                cgContext.strokeEllipse(in: rect.insetBy(dx: 220, dy: 220))
+                drawLocationOnlyCard(in: rect, context: cgContext)
             }
 
-            let paragraph = NSMutableParagraphStyle()
-            paragraph.alignment = .left
-            paragraph.lineBreakMode = .byWordWrapping
-            let text = spot.displayLocation
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 72, weight: .semibold),
-                .foregroundColor: UIColor.white,
-                .paragraphStyle: paragraph
-            ]
-            let textRect = CGRect(x: 72, y: 760, width: 920, height: 220)
-            text.draw(with: textRect, options: [.usesLineFragmentOrigin], attributes: attributes, context: nil)
+            drawCardText(spot.displayLocation, in: rect, hasPhoto: photo != nil)
         }
     }
 
@@ -96,5 +80,86 @@ struct ShareCardRenderer {
             height: scaled.height
         )
         image.draw(in: drawRect)
+    }
+
+    private func drawBottomScrim(in rect: CGRect, context: CGContext) {
+        let colors = [
+            UIColor.black.withAlphaComponent(0).cgColor,
+            UIColor.black.withAlphaComponent(0.18).cgColor,
+            UIColor.black.withAlphaComponent(0.62).cgColor
+        ]
+        let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 0.42, 1])!
+        context.drawLinearGradient(
+            gradient,
+            start: CGPoint(x: rect.midX, y: rect.midY - 40),
+            end: CGPoint(x: rect.midX, y: rect.maxY),
+            options: []
+        )
+    }
+
+    private func drawLocationOnlyCard(in rect: CGRect, context: CGContext) {
+        let colors = [
+            UIColor(red: 0.08, green: 0.13, blue: 0.15, alpha: 1).cgColor,
+            UIColor(red: 0.10, green: 0.38, blue: 0.36, alpha: 1).cgColor,
+            UIColor(red: 0.82, green: 0.55, blue: 0.25, alpha: 1).cgColor
+        ]
+        let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 0.72, 1])!
+        context.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: rect.width, y: rect.height), options: [])
+
+        UIColor.white.withAlphaComponent(0.16).setStroke()
+        context.setLineWidth(5)
+        for inset in stride(from: CGFloat(120), through: CGFloat(420), by: CGFloat(110)) {
+            context.strokeEllipse(in: rect.insetBy(dx: inset, dy: inset))
+        }
+
+        let pinRect = CGRect(x: rect.midX - 74, y: rect.midY - 130, width: 148, height: 148)
+        UIColor.white.withAlphaComponent(0.94).setFill()
+        context.fillEllipse(in: pinRect)
+
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 68, weight: .semibold)
+        let symbol = UIImage(systemName: "mappin.and.ellipse", withConfiguration: symbolConfig)?
+            .withTintColor(UIColor(red: 0.08, green: 0.36, blue: 0.34, alpha: 1), renderingMode: .alwaysOriginal)
+        symbol?.draw(in: pinRect.insetBy(dx: 28, dy: 28))
+
+        drawBottomScrim(in: rect, context: context)
+    }
+
+    private func drawCardText(_ text: String, in rect: CGRect, hasPhoto: Bool) {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .left
+        paragraph.lineBreakMode = .byTruncatingTail
+
+        let labelAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 28, weight: .semibold),
+            .foregroundColor: UIColor.white.withAlphaComponent(0.78),
+            .paragraphStyle: paragraph
+        ]
+        "ShootLater".draw(
+            with: CGRect(x: 72, y: hasPhoto ? 708 : 686, width: 920, height: 42),
+            options: [.usesLineFragmentOrigin],
+            attributes: labelAttributes,
+            context: nil
+        )
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: fittedFontSize(for: text), weight: .semibold),
+            .foregroundColor: UIColor.white,
+            .paragraphStyle: paragraph
+        ]
+        text.draw(
+            with: CGRect(x: 72, y: 760, width: 920, height: 196),
+            options: [.usesLineFragmentOrigin],
+            attributes: attributes,
+            context: nil
+        )
+    }
+
+    private func fittedFontSize(for text: String) -> CGFloat {
+        switch text.count {
+        case 0...28: 72
+        case 29...48: 60
+        case 49...72: 50
+        default: 42
+        }
     }
 }
