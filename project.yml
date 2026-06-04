@@ -1,0 +1,70 @@
+name: ShootLater
+options:
+  bundleIdPrefix: com.anthonycadena
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: 1.0
+    CURRENT_PROJECT_VERSION: 1
+    SWIFT_VERSION: 6.0
+    DEVELOPMENT_TEAM: ""
+    GENERATE_INFOPLIST_FILE: NO
+    ENABLE_APP_INTENTS_SSU_GENERATION: NO
+packages: {}
+targets:
+  ShootLater:
+    type: application
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: ShootLaterApp/Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.anthonycadena.ShootLater
+        PRODUCT_NAME: ShootLater
+        INFOPLIST_FILE: ShootLaterApp/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ShootLaterApp/ShootLater.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - target: ShootLaterWidgets
+        embed: true
+  ShootLaterWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: ShootLaterWidgets/Sources
+      - path: ShootLaterApp/Sources/Domain
+      - path: ShootLaterApp/Sources/Services/Shared
+      - path: ShootLaterApp/Sources/Intents
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.anthonycadena.ShootLater.widgets
+        PRODUCT_NAME: ShootLaterWidgets
+        INFOPLIST_FILE: ShootLaterWidgets/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ShootLaterWidgets/ShootLaterWidgets.entitlements
+        APPLICATION_EXTENSION_API_ONLY: YES
+  ShootLaterTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: ShootLaterTests
+    dependencies:
+      - target: ShootLater
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.anthonycadena.ShootLaterTests
+        INFOPLIST_FILE: ShootLaterTests/Info.plist
+schemes:
+  ShootLater:
+    build:
+      targets:
+        ShootLater: all
+        ShootLaterWidgets: all
+        ShootLaterTests: [test]
+    test:
+      targets:
+        - ShootLaterTests
