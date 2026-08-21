@@ -1,18 +1,19 @@
 import CoreLocation
 import Foundation
+import MapKit
 
 struct ReverseGeocoder {
-    private let geocoder = CLGeocoder()
-
     func displayName(for location: CLLocation?) async -> String? {
-        guard let location else { return nil }
+        guard let location,
+              let request = MKReverseGeocodingRequest(location: location) else {
+            return nil
+        }
+
         do {
-            let placemarks = try await geocoder.reverseGeocodeLocation(location)
-            guard let placemark = placemarks.first else { return nil }
+            guard let mapItem = try await request.mapItems.first else { return nil }
             return [
-                placemark.name,
-                placemark.locality,
-                placemark.administrativeArea
+                mapItem.name,
+                mapItem.addressRepresentations?.cityWithContext(.short)
             ]
             .compactMap { $0?.trimmedNilIfEmpty }
             .removingDuplicates()

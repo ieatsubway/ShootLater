@@ -1,7 +1,9 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(LocationService.self) private var locationService
     @Query private var spots: [ShootSpot]
@@ -9,34 +11,85 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section("Permissions") {
-                    HStack {
-                        Label("Location", systemImage: "location.fill")
-                        Spacer()
-                        Text(locationLabel)
-                            .foregroundStyle(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    GlassPanel {
+                        VStack(alignment: .leading, spacing: 12) {
+                            AppMark(size: 70)
+                            SectionHeading(
+                                title: "Private by default",
+                                subtitle: "ShootLater stores scouting photos, notes, and exact coordinates locally on this device."
+                            )
+                        }
                     }
-                    Button("Request Location Access") {
-                        locationService.requestAuthorization()
-                    }
-                }
 
-                Section("Privacy") {
-                    Text("ShootLater stores exact coordinates and photos locally on this device. Share cards show a general location while Apple Maps links use coordinates only when you choose to share.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeading(title: "Permissions", subtitle: "Location helps each spot remember where it was captured.")
+                        GlassPanel {
+                            VStack(alignment: .leading, spacing: 14) {
+                                HStack(alignment: .top, spacing: 12) {
+                                    Image(systemName: locationService.authorizationState == .denied ? "location.slash" : "location.fill")
+                                        .font(.headline)
+                                        .foregroundStyle(ShootLaterTheme.teal)
+                                        .frame(width: 34, height: 34)
+                                        .background(ShootLaterTheme.mist, in: Circle())
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Location")
+                                            .font(.headline)
+                                        Text(locationLabel)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                    Spacer(minLength: 0)
+                                }
 
-                Section {
-                    Button(role: .destructive) {
-                        confirmDelete = true
-                    } label: {
-                        Label("Delete All Spots", systemImage: "trash")
+                                if locationService.authorizationState != .allowed {
+                                    Button {
+                                        handleLocationButton()
+                                    } label: {
+                                        Label(
+                                            locationService.authorizationState == .denied ? "Open System Settings" : "Request Location Access",
+                                            systemImage: locationService.authorizationState == .denied ? "arrow.up.right.square" : "location"
+                                        )
+                                    }
+                                    .buttonStyle(.glass)
+                                }
+                            }
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeading(title: "Sharing", subtitle: "Share cards show the general place name. Apple Maps links include exact coordinates only when you share a located spot.")
+                        InfoTile(title: "Saved spots", value: "\(spots.count)", systemImage: "rectangle.stack")
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeading(title: "Destructive actions")
+                        Button(role: .destructive) {
+                            confirmDelete = true
+                        } label: {
+                            Label("Delete All Spots", systemImage: "trash")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("deleteAllSpotsButton")
                     }
                 }
+                .padding()
+                .frame(maxWidth: ShootLaterTheme.maxContentWidth)
+                .frame(maxWidth: .infinity)
+            }
+            .background {
+                ScoutingBackdrop()
+                    .ignoresSafeArea()
             }
             .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
             .alert("Delete all spots?", isPresented: $confirmDelete) {
                 Button("Delete", role: .destructive) {
                     deleteAll()
@@ -64,5 +117,14 @@ struct SettingsView: View {
         }
         try? modelContext.save()
         try? repository.updateSnapshots()
+    }
+
+    private func handleLocationButton() {
+        if locationService.authorizationState == .denied,
+           let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        } else {
+            locationService.requestAuthorization()
+        }
     }
 }

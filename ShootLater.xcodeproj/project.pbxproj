@@ -28,6 +28,7 @@
 		8D4105B57B37600326B43E38 /* ShareCardRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30085E93B7486AA0BAE3BB54 /* ShareCardRenderer.swift */; };
 		920B725A67C0CC24C5A21FF2 /* ShootLaterIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4FB95FA7F16BC5D6050AC62 /* ShootLaterIntents.swift */; };
 		934A01D877156BF086898F6C /* ShootSpotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 895B10E05922EDCD2687E89C /* ShootSpotTests.swift */; };
+		A2EBE16878CC048ADB9B3BAB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B6242FAAEEF8B0A1AC8D377C /* Assets.xcassets */; };
 		A4294D72CA03B65881AA0D8E /* ShareCardRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FB0052F27896293CB6147D1 /* ShareCardRendererTests.swift */; };
 		AAB58CE5F851F15F50F44763 /* SpotSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C079E30AC798DFC84B78301 /* SpotSnapshotStore.swift */; };
 		B055FE86D2903415FCC47BD3 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5267953246FC9F7ACDC6F32D /* LocationService.swift */; };
@@ -94,6 +95,7 @@
 		9B30811186932E0E0F35C06C /* ReverseGeocoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReverseGeocoder.swift; sourceTree = "<group>"; };
 		9D9FC4FF0C2C8B309C96C253 /* ShootLaterWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ShootLaterWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA7DFD0A3B0BF6B9EB321C88 /* SpotDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotDetailView.swift; sourceTree = "<group>"; };
+		B6242FAAEEF8B0A1AC8D377C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CD410A44EA73610EC15DB0DD /* PhotoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoStore.swift; sourceTree = "<group>"; };
 		CD831FF5DFB82D2C83666FDC /* CameraCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureView.swift; sourceTree = "<group>"; };
 		CFF6B8B06E903241101A610D /* CaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureView.swift; sourceTree = "<group>"; };
@@ -185,6 +187,7 @@
 		9595A16903145950E3CC530F /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				B6242FAAEEF8B0A1AC8D377C /* Assets.xcassets */,
 				EA60C876F1C3E9F36F89DE79 /* App */,
 				74AC4A0C236F9A284041AFDD /* Components */,
 				98CC45C3759A3F359E593871 /* Domain */,
@@ -289,6 +292,7 @@
 			buildConfigurationList = A990C2B025BE26EECEB92341 /* Build configuration list for PBXNativeTarget "ShootLater" */;
 			buildPhases = (
 				CC3221F39518FDDDC59E0823 /* Sources */,
+				4581E41CE0EBE2F8DF2411D8 /* Resources */,
 				5237CE6AD3E35667069EBFF0 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
@@ -378,6 +382,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4581E41CE0EBE2F8DF2411D8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A2EBE16878CC048ADB9B3BAB /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		0E63B4AA7BA188AA7F706E23 /* Sources */ = {

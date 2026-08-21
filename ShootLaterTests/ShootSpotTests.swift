@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Testing
+import UIKit
 @testable import ShootLater
 
 @Suite("ShootSpot domain behavior")
@@ -52,5 +53,34 @@ struct ShootSpotTests {
         #expect(try repository.search("neon").map(\.id) == [titleSpot.id])
         #expect(try repository.search("backlight").map(\.id) == [notesSpot.id])
         #expect(try repository.search("presidio").map(\.id) == [placeSpot.id])
+    }
+
+    @Test("repository delete removes SwiftData spot and app-managed photo")
+    func repositoryDeleteRemovesSpotAndPhoto() throws {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: ShootSpot.self, configurations: config)
+        let context = ModelContext(container)
+        let repository = SpotRepository(context: context)
+        let photoRoot = FileManager.default.temporaryDirectory
+            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        let photoStore = PhotoStore(rootDirectory: photoRoot)
+        let photoFileName = try photoStore.save(UIImage(systemName: "mappin.and.ellipse")!)
+
+        let spot = try repository.create(
+            photoFileName: photoFileName,
+            latitude: 37.7749,
+            longitude: -122.4194,
+            locationDisplayName: "San Francisco",
+            source: .cameraCapture,
+            locationStatus: .captured
+        )
+
+        #expect(try repository.spot(id: spot.id) != nil)
+        #expect(FileManager.default.fileExists(atPath: photoStore.url(for: photoFileName).path()))
+
+        try repository.delete(spot, photoStore: photoStore)
+
+        #expect(try repository.spot(id: spot.id) == nil)
+        #expect(!FileManager.default.fileExists(atPath: photoStore.url(for: photoFileName).path()))
     }
 }
