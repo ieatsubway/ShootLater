@@ -11,17 +11,20 @@ struct PendingCapture: Identifiable {
 
 struct CaptureView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(LocationService.self) private var locationService
     @Environment(AppRouter.self) private var router
     @State private var pendingCapture: PendingCapture?
     @State private var isCameraPresented = false
     @State private var isSavingLocation = false
+    @State private var showSpotAddedOverlay = false
+    @State private var locationSaveError: LocationSaveError?
 
     var body: some View {
         NavigationStack {
             GeometryReader { proxy in
-                let compactHeight = proxy.size.height < 900
+                let compactHeight = proxy.size.height < 680
 
                 ZStack {
                     ScoutingBackdrop()
@@ -35,8 +38,14 @@ struct CaptureView: View {
                             .frame(maxWidth: .infinity)
                             .frame(minHeight: proxy.size.height, alignment: compactHeight ? .top : .center)
                     }
-                    .contentMargins(.bottom, compactHeight ? 124 : 24, for: .scrollContent)
+                    .contentMargins(.bottom, 24, for: .scrollContent)
                     .background(.clear)
+
+                    if showSpotAddedOverlay {
+                        SpotAddedOverlay()
+                            .transition(.scale(scale: 0.92).combined(with: .opacity))
+                            .zIndex(2)
+                    }
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -60,13 +69,20 @@ struct CaptureView: View {
                     router.captureRequested = false
                 }
             }
+            .alert(item: $locationSaveError) { error in
+                Alert(
+                    title: Text(error.title),
+                    message: Text(error.message),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
         }
     }
 
     @ViewBuilder
     private func captureLayout(width: CGFloat, height: CGFloat) -> some View {
         let useWideLayout = horizontalSizeClass == .regular || width > 720
-        let compactHeight = height < 900
+        let compactHeight = height < 680
 
         if useWideLayout {
             HStack(alignment: .center, spacing: 28) {
@@ -96,7 +112,7 @@ struct CaptureView: View {
                 Text(compact ? "Capture a reference photo or save your current location." : "Take a reference photo or save your current location in seconds. No title or notes required.")
                     .font(compact ? .footnote : .body)
                     .foregroundStyle(ShootLaterTheme.ink.opacity(0.72))
-                    .lineLimit(compact ? 2 : nil)
+                    .lineLimit(compact && !dynamicTypeSize.isAccessibilitySize ? 2 : nil)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -105,7 +121,7 @@ struct CaptureView: View {
 
     private func captureActions(compact: Bool) -> some View {
         VStack(spacing: 14) {
-            if compact {
+            if compact && !dynamicTypeSize.isAccessibilitySize {
                 HStack(spacing: 12) {
                     Button {
                         isCameraPresented = true
@@ -116,7 +132,7 @@ struct CaptureView: View {
                             .frame(minHeight: 48)
                     }
                     .buttonStyle(.glassProminent)
-                    .tint(ShootLaterTheme.actionAmber)
+                    .tint(ShootLaterTheme.primaryAction)
                     .accessibilityIdentifier("captureNewSpotButton")
 
                     Button {
@@ -141,7 +157,7 @@ struct CaptureView: View {
                         .frame(minHeight: 54)
                 }
                 .buttonStyle(.glassProminent)
-                .tint(ShootLaterTheme.actionAmber)
+                .tint(ShootLaterTheme.primaryAction)
                 .accessibilityIdentifier("captureNewSpotButton")
 
                 Button {
@@ -159,7 +175,7 @@ struct CaptureView: View {
 
             if compact {
                 HStack {
-                    LocationStatusBadge(status: locationService.authorizationState == .denied ? .unavailable : .pendingReverseGeocode)
+                    LocationPermissionBadge(state: locationService.authorizationState)
                     Spacer(minLength: 0)
                 }
             } else {
@@ -169,7 +185,7 @@ struct CaptureView: View {
                             title: "Ready when you are",
                             subtitle: "Coordinates stay private unless you choose to share an Apple Maps link."
                         )
-                        LocationStatusBadge(status: locationService.authorizationState == .denied ? .unavailable : .pendingReverseGeocode)
+                        LocationPermissionBadge(state: locationService.authorizationState)
                     }
                 }
             }
@@ -180,15 +196,66 @@ struct CaptureView: View {
         isSavingLocation = true
         defer { isSavingLocation = false }
         let location = await locationService.requestCurrentLocation()
+        guard let location else {
+            locationSaveError = LocationSaveError(
+                title: "Location unavailable",
+                message: "Check Location permissions and try again."
+            )
+            return
+        }
+
         let displayName = await ReverseGeocoder().displayName(for: location)
         let repository = SpotRepository(context: modelContext)
-        _ = try? repository.create(
-            latitude: location?.coordinate.latitude,
-            longitude: location?.coordinate.longitude,
-            locationDisplayName: displayName,
-            source: .locationOnly,
-            locationStatus: location == nil ? .unavailable : (displayName == nil ? .pendingReverseGeocode : .captured)
-        )
+        do {
+            _ = try repository.create(
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude,
+                locationDisplayName: displayName,
+                source: .locationOnly,
+                locationStatus: displayName == nil ? .pendingReverseGeocode : .captured
+            )
+            await showSpotAdded()
+        } catch {
+            locationSaveError = LocationSaveError(
+                title: "Could not save spot",
+                message: "Try again in a moment."
+            )
+        }
+    }
+
+    private func showSpotAdded() async {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+            showSpotAddedOverlay = true
+        }
+
+        try? await Task.sleep(for: .seconds(1.5))
+
+        withAnimation(.easeInOut(duration: 0.22)) {
+            showSpotAddedOverlay = false
+        }
+    }
+}
+
+private struct LocationSaveError: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+}
+
+private struct SpotAddedOverlay: View {
+    var body: some View {
+        Label("Spot added", systemImage: "checkmark.circle.fill")
+            .font(.headline.weight(.semibold))
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .glassEffect(.regular.tint(ShootLaterTheme.glassTint), in: Capsule())
+            .overlay {
+                Capsule()
+                    .stroke(ShootLaterTheme.hairline.opacity(0.45), lineWidth: 0.5)
+            }
+            .shadow(color: ShootLaterTheme.backdropBase.opacity(0.22), radius: 26, y: 14)
+            .accessibilityIdentifier("spotAddedOverlay")
     }
 }
 

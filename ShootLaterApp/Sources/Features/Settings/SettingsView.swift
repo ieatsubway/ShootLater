@@ -1,7 +1,9 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(LocationService.self) private var locationService
     @Query private var spots: [ShootSpot]
@@ -42,10 +44,17 @@ struct SettingsView: View {
                                     Spacer(minLength: 0)
                                 }
 
-                                Button("Request Location Access") {
-                                    locationService.requestAuthorization()
+                                if locationService.authorizationState != .allowed {
+                                    Button {
+                                        handleLocationButton()
+                                    } label: {
+                                        Label(
+                                            locationService.authorizationState == .denied ? "Open System Settings" : "Request Location Access",
+                                            systemImage: locationService.authorizationState == .denied ? "arrow.up.right.square" : "location"
+                                        )
+                                    }
+                                    .buttonStyle(.glass)
                                 }
-                                .buttonStyle(.glass)
                             }
                         }
                     }
@@ -76,6 +85,11 @@ struct SettingsView: View {
                     .ignoresSafeArea()
             }
             .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
             .alert("Delete all spots?", isPresented: $confirmDelete) {
                 Button("Delete", role: .destructive) {
                     deleteAll()
@@ -103,5 +117,14 @@ struct SettingsView: View {
         }
         try? modelContext.save()
         try? repository.updateSnapshots()
+    }
+
+    private func handleLocationButton() {
+        if locationService.authorizationState == .denied,
+           let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        } else {
+            locationService.requestAuthorization()
+        }
     }
 }

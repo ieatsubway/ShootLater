@@ -1,3 +1,4 @@
+import MapKit
 import SwiftData
 import SwiftUI
 
@@ -130,13 +131,20 @@ struct SpotDetailView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(18)
-                .background(.white.opacity(0.26), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(ShootLaterTheme.hairline.opacity(0.40), lineWidth: 0.5)
+                }
             }
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), spacing: 12)], spacing: 12) {
+            SpotLocationMapCard(spot: spot)
+
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12)], spacing: 12) {
                 InfoTile(title: "Saved", value: spot.createdAt.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
                 InfoTile(title: "Source", value: spot.source.label, systemImage: spot.source == .cameraCapture ? "camera.fill" : "location.fill")
+                InfoTile(title: "Location", value: spot.displayLocation, systemImage: spot.coordinate == nil ? "location.slash" : "mappin.and.ellipse")
+                InfoTile(title: "Status", value: spot.locationStatus.label, systemImage: spot.locationStatus == .unavailable ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
             }
 
             VStack(spacing: 10) {
@@ -156,6 +164,63 @@ struct SpotDetailView: View {
     private func deleteSpot() {
         try? SpotRepository(context: modelContext).delete(spot)
         dismiss()
+    }
+}
+
+private struct SpotLocationMapCard: View {
+    let spot: ShootSpot
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeading(title: "Map", subtitle: spot.coordinate == nil ? "Coordinates were not captured for this spot." : spot.displayLocation)
+
+            if let coordinate = spot.coordinate {
+                Map(initialPosition: .region(region(centeredOn: coordinate))) {
+                    Marker(spot.bestDisplayTitle, coordinate: coordinate)
+                        .tint(ShootLaterTheme.actionAmber)
+                }
+                .mapStyle(.standard(elevation: .realistic))
+                .frame(height: 220)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(ShootLaterTheme.hairline.opacity(0.45), lineWidth: 0.5)
+                }
+                .accessibilityLabel("Map showing \(spot.bestDisplayTitle)")
+            } else {
+                VStack(spacing: 10) {
+                    Image(systemName: "location.slash")
+                        .font(.system(size: 32, weight: .semibold))
+                        .foregroundStyle(ShootLaterTheme.teal)
+                    Text("Location unavailable")
+                        .font(.headline)
+                    Text("This spot is saved, but it cannot be shown on a map.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 180)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(ShootLaterTheme.hairline.opacity(0.45), lineWidth: 0.5)
+                }
+            }
+        }
+        .padding(18)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(ShootLaterTheme.hairline.opacity(0.40), lineWidth: 0.5)
+        }
+    }
+
+    private func region(centeredOn coordinate: CLLocationCoordinate2D) -> MKCoordinateRegion {
+        MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        )
     }
 }
 

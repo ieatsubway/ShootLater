@@ -30,25 +30,25 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            CaptureView()
-                .tabItem { Label("Capture", systemImage: "camera.fill") }
-                .tag(AppTab.capture)
+            Tab("Capture", systemImage: "camera", value: AppTab.capture) {
+                CaptureView()
+            }
 
-            SpotMapView()
-                .tabItem { Label("Map", systemImage: "map.fill") }
-                .tag(AppTab.map)
+            Tab("Map", systemImage: "map", value: AppTab.map) {
+                SpotMapView()
+            }
 
-            SpotsListView()
-                .tabItem { Label("Spots", systemImage: "rectangle.stack.fill") }
-                .tag(AppTab.spots)
+            Tab("Library", systemImage: "rectangle.stack", value: AppTab.spots) {
+                SpotsListView(mode: .library)
+            }
 
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
-                .tag(AppTab.settings)
+            Tab("Search", systemImage: "magnifyingglass", value: AppTab.search, role: .search) {
+                SpotsListView(mode: .search)
+            }
         }
-        .tint(ShootLaterTheme.actionAmber)
-        .toolbarBackground(.hidden, for: .tabBar)
-        .background(.clear)
+        .tint(ShootLaterTheme.amber)
+        .tabBarMinimizeBehavior(.onScrollDown)
+        .tabViewSearchActivation(.searchTabSelection)
     }
 }
 
@@ -98,7 +98,7 @@ struct OnboardingView: View {
                                     .frame(minHeight: compactOnboarding ? 46 : 50)
                             }
                             .buttonStyle(.glassProminent)
-                            .tint(ShootLaterTheme.actionAmber)
+                            .tint(ShootLaterTheme.primaryAction)
                             .frame(maxWidth: 420)
                             .padding(.top, 4)
 
@@ -113,7 +113,7 @@ struct OnboardingView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, 28)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: proxy.size.height, alignment: .top)
+                    .frame(minHeight: proxy.size.height, alignment: .center)
                 }
             }
         }

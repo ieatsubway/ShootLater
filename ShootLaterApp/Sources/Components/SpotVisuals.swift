@@ -8,28 +8,64 @@ enum ShootLaterTheme {
     static let compactSpacing: CGFloat = 16
     static let relaxedSpacing: CGFloat = 24
 
-    static let teal = Color(red: 0.18, green: 0.41, blue: 0.36)
-    static let ink = Color(red: 0.10, green: 0.12, blue: 0.14)
-    static let amber = Color(red: 0.88, green: 0.58, blue: 0.22)
-    static let mist = Color(red: 0.92, green: 0.95, blue: 0.93)
-    static let slate = Color(red: 0.18, green: 0.22, blue: 0.27)
-    static let backdropBase = Color(red: 0.04, green: 0.10, blue: 0.10)
-    static let backdropTeal = Color(red: 0.08, green: 0.30, blue: 0.27)
-    static let moss = Color(red: 0.34, green: 0.48, blue: 0.34)
-    static let actionAmber = Color(red: 0.92, green: 0.56, blue: 0.20)
-    static let clay = Color(red: 0.78, green: 0.34, blue: 0.25)
+    static let teal = adaptive(
+        light: UIColor(red: 0.08, green: 0.36, blue: 0.31, alpha: 1),
+        dark: UIColor(red: 0.39, green: 0.78, blue: 0.70, alpha: 1)
+    )
+    static let ink = Color(uiColor: .label)
+    static let amber = adaptive(
+        light: UIColor(red: 0.76, green: 0.38, blue: 0.08, alpha: 1),
+        dark: UIColor(red: 1.00, green: 0.68, blue: 0.31, alpha: 1)
+    )
+    static let mist = adaptive(
+        light: UIColor(red: 0.88, green: 0.94, blue: 0.91, alpha: 1),
+        dark: UIColor(red: 0.10, green: 0.20, blue: 0.18, alpha: 1)
+    )
+    static let slate = Color(uiColor: .secondaryLabel)
+    static let backdropBase = adaptive(
+        light: UIColor(red: 0.96, green: 0.97, blue: 0.94, alpha: 1),
+        dark: UIColor(red: 0.035, green: 0.065, blue: 0.06, alpha: 1)
+    )
+    static let backdropTeal = adaptive(
+        light: UIColor(red: 0.85, green: 0.93, blue: 0.89, alpha: 1),
+        dark: UIColor(red: 0.055, green: 0.18, blue: 0.16, alpha: 1)
+    )
+    static let moss = adaptive(
+        light: UIColor(red: 0.76, green: 0.85, blue: 0.74, alpha: 1),
+        dark: UIColor(red: 0.17, green: 0.27, blue: 0.18, alpha: 1)
+    )
+    static let actionAmber = amber
+    static let primaryAction = adaptive(
+        light: UIColor(red: 0.70, green: 0.29, blue: 0.035, alpha: 1),
+        dark: UIColor(red: 0.66, green: 0.26, blue: 0.02, alpha: 1)
+    )
+    static let clay = adaptive(
+        light: UIColor(red: 0.93, green: 0.79, blue: 0.67, alpha: 1),
+        dark: UIColor(red: 0.34, green: 0.14, blue: 0.10, alpha: 1)
+    )
+    static let glassTint = adaptive(
+        light: UIColor(red: 0.91, green: 0.95, blue: 0.92, alpha: 0.34),
+        dark: UIColor(red: 0.10, green: 0.25, blue: 0.22, alpha: 0.22)
+    )
+    static let hairline = Color(uiColor: .separator)
 
     static var scoutingGradient: LinearGradient {
         LinearGradient(
-            colors: [backdropBase, backdropTeal, actionAmber],
+            colors: [teal, Color(red: 0.08, green: 0.20, blue: 0.18), amber],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
+
+    private static func adaptive(light: UIColor, dark: UIColor) -> Color {
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark ? dark : light
+        })
+    }
 }
 
 struct ScoutingBackdrop: View {
-    var softWash: Double = 0.16
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         GeometryReader { proxy in
@@ -40,46 +76,29 @@ struct ScoutingBackdrop: View {
                     colors: [
                         ShootLaterTheme.backdropBase,
                         ShootLaterTheme.backdropTeal,
-                        ShootLaterTheme.moss.opacity(0.86),
-                        ShootLaterTheme.actionAmber.opacity(0.88)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                Circle()
-                    .fill(ShootLaterTheme.actionAmber.opacity(0.62))
-                    .frame(width: longestSide * 0.58, height: longestSide * 0.58)
-                    .blur(radius: 76)
-                    .offset(x: -proxy.size.width * 0.34, y: -proxy.size.height * 0.26)
-
-                Circle()
-                    .fill(ShootLaterTheme.backdropTeal.opacity(0.78))
-                    .frame(width: longestSide * 0.74, height: longestSide * 0.74)
-                    .blur(radius: 92)
-                    .offset(x: proxy.size.width * 0.38, y: -proxy.size.height * 0.14)
-
-                Circle()
-                    .fill(ShootLaterTheme.clay.opacity(0.58))
-                    .frame(width: longestSide * 0.56, height: longestSide * 0.56)
-                    .blur(radius: 88)
-                    .offset(x: proxy.size.width * 0.35, y: proxy.size.height * 0.33)
-
-                Circle()
-                    .fill(ShootLaterTheme.mist.opacity(0.42))
-                    .frame(width: longestSide * 0.82, height: longestSide * 0.82)
-                    .blur(radius: 110)
-                    .offset(x: -proxy.size.width * 0.18, y: proxy.size.height * 0.22)
-
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(softWash * 0.24),
-                        Color.white.opacity(softWash),
-                        Color.white.opacity(softWash * 0.34)
+                        ShootLaterTheme.backdropBase
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
+
+                Circle()
+                    .fill(ShootLaterTheme.actionAmber.opacity(colorScheme == .dark ? 0.14 : 0.12))
+                    .frame(width: longestSide * 0.62, height: longestSide * 0.62)
+                    .blur(radius: 96)
+                    .offset(x: -proxy.size.width * 0.42, y: -proxy.size.height * 0.38)
+
+                Circle()
+                    .fill(ShootLaterTheme.teal.opacity(colorScheme == .dark ? 0.18 : 0.10))
+                    .frame(width: longestSide * 0.78, height: longestSide * 0.78)
+                    .blur(radius: 118)
+                    .offset(x: proxy.size.width * 0.48, y: proxy.size.height * 0.10)
+
+                Circle()
+                    .fill(ShootLaterTheme.moss.opacity(colorScheme == .dark ? 0.12 : 0.10))
+                    .frame(width: longestSide * 0.70, height: longestSide * 0.70)
+                    .blur(radius: 124)
+                    .offset(x: -proxy.size.width * 0.30, y: proxy.size.height * 0.48)
             }
             .ignoresSafeArea()
         }
@@ -108,7 +127,7 @@ struct SpotThumbnail: View {
             .clipShape(RoundedRectangle(cornerRadius: min(22, size * 0.20), style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: min(22, size * 0.20), style: .continuous)
-                    .stroke(.white.opacity(0.36), lineWidth: 1)
+                    .stroke(ShootLaterTheme.hairline.opacity(0.55), lineWidth: 0.5)
             }
 
             if showSourceBadge {
@@ -134,7 +153,36 @@ struct LocationStatusBadge: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .glassEffect(.regular, in: Capsule())
+            .background(.thinMaterial, in: Capsule())
+    }
+}
+
+struct LocationPermissionBadge: View {
+    let state: LocationService.AuthorizationState
+
+    private var label: String {
+        switch state {
+        case .unknown: "Location permission needed"
+        case .allowed: "Location ready"
+        case .denied: "Location off"
+        }
+    }
+
+    private var systemImage: String {
+        switch state {
+        case .unknown: "location"
+        case .allowed: "location.fill"
+        case .denied: "location.slash"
+        }
+    }
+
+    var body: some View {
+        Label(label, systemImage: systemImage)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.thinMaterial, in: Capsule())
     }
 }
 
@@ -191,13 +239,15 @@ struct GlassPanel<Content: View>: View {
     var body: some View {
         content
             .padding(18)
-            .background(.white.opacity(0.24), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .glassEffect(
+                .regular.tint(ShootLaterTheme.glassTint),
+                in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            )
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(.white.opacity(0.42), lineWidth: 1)
+                    .stroke(ShootLaterTheme.hairline.opacity(0.40), lineWidth: 0.5)
             }
-            .shadow(color: ShootLaterTheme.backdropBase.opacity(0.16), radius: 28, y: 14)
+            .shadow(color: .black.opacity(0.08), radius: 22, y: 10)
     }
 }
 
@@ -230,8 +280,7 @@ struct MetadataPill: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 11)
             .padding(.vertical, 7)
-            .background(.white.opacity(0.28), in: Capsule())
-            .glassEffect(.regular, in: Capsule())
+            .background(.thinMaterial, in: Capsule())
     }
 }
 
@@ -287,8 +336,11 @@ struct InfoTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(.white.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(ShootLaterTheme.hairline.opacity(0.35), lineWidth: 0.5)
+        }
     }
 }
 
@@ -314,11 +366,10 @@ struct SpotCard: View {
             }
         }
         .padding(12)
-        .background(.white.opacity(0.26), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(.secondary.opacity(0.14), lineWidth: 1)
+                .stroke(ShootLaterTheme.hairline.opacity(0.44), lineWidth: 0.5)
         }
         .shadow(color: .black.opacity(0.06), radius: 12, y: 6)
     }

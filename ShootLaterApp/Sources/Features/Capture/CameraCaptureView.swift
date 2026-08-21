@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import SwiftUI
 import UIKit
 
@@ -20,9 +20,7 @@ final class CameraCaptureViewController: UIViewController, @preconcurrency AVCap
     var onCapture: ((UIImage) -> Void)?
     var onCancel: (() -> Void)?
 
-    private let session = AVCaptureSession()
-    private let output = AVCapturePhotoOutput()
-    private let sessionQueue = DispatchQueue(label: "com.shootlater.camera-session")
+    private let cameraSession = CameraCaptureSession()
     private var isSessionConfigured = false
     private var previewLayer: AVCaptureVideoPreviewLayer?
     private let shutter = UIButton(type: .system)
@@ -42,11 +40,7 @@ final class CameraCaptureViewController: UIViewController, @preconcurrency AVCap
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        sessionQueue.async { [session] in
-            if session.isRunning {
-                session.stopRunning()
-            }
-        }
+        cameraSession.stop()
     }
 
     private func requestAccessAndConfigureSession() {
@@ -54,6 +48,7 @@ final class CameraCaptureViewController: UIViewController, @preconcurrency AVCap
         case .authorized:
             configureSession()
         case .notDetermined:
+            let cameraSession = cameraSession
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
                 guard granted else {
                     DispatchQueue.main.async {
@@ -61,7 +56,11 @@ final class CameraCaptureViewController: UIViewController, @preconcurrency AVCap
                     }
                     return
                 }
-                self?.configureSession()
+                cameraSession.configure { success in
+                    DispatchQueue.main.async {
+                        self?.finishSessionConfiguration(succeeded: success)
+                    }
+                }
             }
         case .denied, .restricted:
             showUnavailableMessage("Camera access is required to capture a spot.")
@@ -71,41 +70,27 @@ final class CameraCaptureViewController: UIViewController, @preconcurrency AVCap
     }
 
     private func configureSession() {
-        sessionQueue.async { [weak self] in
-            guard let self else { return }
-
-            self.session.beginConfiguration()
-            self.session.sessionPreset = .photo
-
-            guard
-                let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-                let input = try? AVCaptureDeviceInput(device: camera),
-                self.session.canAddInput(input),
-                self.session.canAddOutput(self.output)
-            else {
-                self.session.commitConfiguration()
-                DispatchQueue.main.async {
-                    self.showUnavailableMessage("Camera is unavailable.")
-                }
-                return
-            }
-
-            self.session.addInput(input)
-            self.session.addOutput(self.output)
-            self.session.commitConfiguration()
-            self.session.startRunning()
-
+        cameraSession.configure { [weak self] success in
             DispatchQueue.main.async {
-                let preview = AVCaptureVideoPreviewLayer(session: self.session)
-                preview.videoGravity = .resizeAspectFill
-                preview.frame = self.view.bounds
-                self.view.layer.insertSublayer(preview, at: 0)
-                self.previewLayer = preview
-                self.isSessionConfigured = true
-                self.shutter.isEnabled = true
-                self.statusLabel.isHidden = true
+                self?.finishSessionConfiguration(succeeded: success)
             }
         }
+    }
+
+    private func finishSessionConfiguration(succeeded: Bool) {
+        guard succeeded else {
+            showUnavailableMessage("Camera is unavailable.")
+            return
+        }
+
+        let preview = AVCaptureVideoPreviewLayer(session: cameraSession.session)
+        preview.videoGravity = .resizeAspectFill
+        preview.frame = view.bounds
+        view.layer.insertSublayer(preview, at: 0)
+        previewLayer = preview
+        isSessionConfigured = true
+        shutter.isEnabled = true
+        statusLabel.isHidden = true
     }
 
     private func configureControls() {
@@ -148,11 +133,11 @@ final class CameraCaptureViewController: UIViewController, @preconcurrency AVCap
     }
 
     @objc private func capture() {
-        guard isSessionConfigured, output.connection(with: .video) != nil else {
+        guard isSessionConfigured, cameraSession.output.connection(with: .video) != nil else {
             showUnavailableMessage("Camera is unavailable.")
             return
         }
-        output.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
+        cameraSession.output.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
     }
 
     @objc private func cancelCapture() {
@@ -173,6 +158,54 @@ final class CameraCaptureViewController: UIViewController, @preconcurrency AVCap
         else { return }
         DispatchQueue.main.async { [onCapture] in
             onCapture?(image)
+        }
+    }
+}
+
+private final class CameraCaptureSession: @unchecked Sendable {
+    let session = AVCaptureSession()
+    let output = AVCapturePhotoOutput()
+    private let queue = DispatchQueue(label: "com.shootlater.camera-session")
+    private var isConfigured = false
+
+    func configure(completion: @escaping @Sendable (Bool) -> Void) {
+        queue.async { [self] in
+            if isConfigured {
+                if !session.isRunning {
+                    session.startRunning()
+                }
+                completion(true)
+                return
+            }
+
+            session.beginConfiguration()
+            session.sessionPreset = .photo
+
+            guard
+                let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                let input = try? AVCaptureDeviceInput(device: camera),
+                session.canAddInput(input),
+                session.canAddOutput(output)
+            else {
+                session.commitConfiguration()
+                completion(false)
+                return
+            }
+
+            session.addInput(input)
+            session.addOutput(output)
+            session.commitConfiguration()
+            isConfigured = true
+            session.startRunning()
+            completion(true)
+        }
+    }
+
+    func stop() {
+        queue.async { [session] in
+            if session.isRunning {
+                session.stopRunning()
+            }
         }
     }
 }

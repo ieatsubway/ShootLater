@@ -51,8 +51,10 @@ struct SpotMapView: View {
                         message: spots.isEmpty ? "Capture a spot or save your location to start building a scouting map." : "Saved spots without coordinates stay in your list, but they cannot appear on the map.",
                         systemImage: "map"
                     )
-                    .background(.white.opacity(0.28), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+                    .glassEffect(
+                        .regular.tint(ShootLaterTheme.glassTint),
+                        in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    )
                     .padding()
                 }
 

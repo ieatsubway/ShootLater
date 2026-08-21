@@ -50,25 +50,31 @@ struct ShareCardRendererTests {
     }
 
     @MainActor
-    @Test("scouting dusk backdrop uses dark base and warm foreground accent")
-    func scoutingDuskPaletteHasDepthAndWarmth() {
-        let baseLuminance = luminance(of: ShootLaterTheme.backdropBase)
-        let accent = rgba(of: ShootLaterTheme.actionAmber)
+    @Test("scouting backdrop and accent adapt to light and dark appearances")
+    func scoutingPaletteAdaptsToAppearance() {
+        let base = UIColor(ShootLaterTheme.backdropBase)
+        let accent = UIColor(ShootLaterTheme.actionAmber)
+        let lightTraits = UITraitCollection(userInterfaceStyle: .light)
+        let darkTraits = UITraitCollection(userInterfaceStyle: .dark)
+        let lightBaseLuminance = luminance(of: base.resolvedColor(with: lightTraits))
+        let darkBaseLuminance = luminance(of: base.resolvedColor(with: darkTraits))
+        let lightAccent = rgba(of: accent.resolvedColor(with: lightTraits))
+        let darkAccent = rgba(of: accent.resolvedColor(with: darkTraits))
 
-        #expect(baseLuminance < 0.18)
-        #expect(accent.red > accent.blue)
-        #expect(accent.green > accent.blue)
+        #expect(lightBaseLuminance > 0.85)
+        #expect(darkBaseLuminance < 0.18)
+        #expect(lightAccent.red > lightAccent.blue)
+        #expect(lightAccent.green > lightAccent.blue)
+        #expect(darkAccent.red > darkAccent.blue)
+        #expect(darkAccent.green > darkAccent.blue)
     }
 
-    @MainActor
-    private func luminance(of color: Color) -> CGFloat {
+    private func luminance(of color: UIColor) -> CGFloat {
         let components = rgba(of: color)
         return (components.red * 0.299) + (components.green * 0.587) + (components.blue * 0.114)
     }
 
-    @MainActor
-    private func rgba(of color: Color) -> (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
-        let uiColor = UIColor(color)
+    private func rgba(of uiColor: UIColor) -> (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
         var red: CGFloat = 0
         var green: CGFloat = 0
         var blue: CGFloat = 0

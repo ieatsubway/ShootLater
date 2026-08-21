@@ -4,7 +4,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     case capture
     case map
     case spots
-    case settings
+    case search
 
     var id: String { rawValue }
 }
